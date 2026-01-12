@@ -1,59 +1,166 @@
 <!DOCTYPE html>
-<html>
+<html lang="th">
 <head>
-    <title>IoT Distance Monitor</title>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Smart Monitor</title>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
     <style>
-        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; text-align: center; background: #eef2f3; padding-top: 50px; }
-        .card { background: white; padding: 40px; border-radius: 20px; display: inline-block; box-shadow: 0 10px 20px rgba(0,0,0,0.1); width: 300px; }
-        h1 { color: #34495e; font-size: 20px; margin-bottom: 20px; }
-        #distance { font-size: 64px; color: #2ecc71; font-weight: bold; margin: 10px 0; }
-        .unit { font-size: 20px; color: #95a5a6; }
+        :root {
+            --primary-color: #4facfe;
+            --secondary-color: #00f2fe;
+            --danger-color: #ff4b2b;
+            --success-color: #00b09b;
+            --dark-color: #2c3e50;
+        }
+        body {
+            font-family: 'Kanit', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 90%;
+            max-width: 450px;
+            background: white;
+            padding: 30px;
+            border-radius: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .header h1 {
+            color: var(--dark-color);
+            margin-bottom: 5px;
+            font-size: 24px;
+        }
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            background-color: #bbb;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .online { background-color: var(--success-color); box-shadow: 0 0 8px var(--success-color); }
+
+        .display-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 20px;
+            margin: 25px 0;
+            border: 1px solid #eee;
+        }
+        .value {
+            font-size: 72px;
+            font-weight: bold;
+            color: var(--primary-color);
+            line-height: 1;
+        }
+        .unit { color: #95a5a6; font-size: 18px; }
+
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .btn {
+            border: none;
+            padding: 15px;
+            border-radius: 15px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-on { background: linear-gradient(to right, #11998e, #38ef7d); }
+        .btn-off { background: linear-gradient(to right, #ff4b2b, #ff416c); }
+        .btn:active { transform: scale(0.95); }
+        
+        #current-status {
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--dark-color);
+            background: #f1f2f6;
+            padding: 8px;
+            border-radius: 10px;
+        }
     </style>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500&display=swap" rel="stylesheet">
 </head>
 <body>
 
-    <div class="card">
-        <h1>ระดับระยะทางปัจจุบัน</h1>
-        <div id="distance">--</div>
+<div class="container">
+    <div class="header">
+        <h1><i class="fas fa-microchip"></i> IoT Dashboard</h1>
+        <p><span class="status-dot online"></span> ระบบเชื่อมต่อแล้ว</p>
+    </div>
+
+    <div class="display-card">
+        <p style="margin:0; color: #7f8c8d;">ระยะทางที่วัดได้</p>
+        <div id="distance" class="value">--</div>
         <div class="unit">เซนติเมตร (cm)</div>
     </div>
 
-    <script>
-        // ค่า Firebase Config ที่คุณให้มา
-        const firebaseConfig = {
-            apiKey: "AIzaSyD0N5IXpX-9EV921fel1JiuL8MTtCtGeA0",
-            authDomain: "projectiot-db190.firebaseapp.com",
-            databaseURL: "https://projectiot-db190-default-rtdb.firebaseio.com",
-            projectId: "projectiot-db190",
-            storageBucket: "projectiot-db190.firebasestorage.app",
-            messagingSenderId: "842747547826",
-            appId: "1:842747547826:web:c3ffa0cad0beacb60a39ab",
-            measurementId: "G-T1Z7VT9PV3"
-        };
+    <div class="controls">
+        <button class="btn btn-on" onclick="control(1)">
+            <i class="fas fa-volume-up fa-lg"></i>
+            เปิดระบบเสียง
+        </button>
+        <button class="btn btn-off" onclick="control(0)">
+            <i class="fas fa-volume-mute fa-lg"></i>
+            ปิดระบบเสียง
+        </button>
+    </div>
 
-        // เริ่มต้นการทำงานของ Firebase
-        firebase.initializeApp(firebaseConfig);
-        const database = firebase.database();
+    <div id="current-status">สถานะระบบ: <span id="status-text">กำลังโหลด...</span></div>
+</div>
 
-        // ดึงข้อมูลจากพาธ /sensor/distance (ตามที่คุณตั้งไว้ในโค้ด ESP8266)
-        const distanceRef = database.ref('/sensor/distance');
-        distanceRef.on('value', (snapshot) => {
-            const data = snapshot.val();
-            if (data !== null) {
-                document.getElementById('distance').innerText = data;
-                
-                // เปลี่ยนสีตัวเลขถ้าใกล้เกินไป (ตัวอย่าง)
-                if (data < 10) {
-                    document.getElementById('distance').style.color = "#e74c3c"; // สีแดง
-                } else {
-                    document.getElementById('distance').style.color = "#2ecc71"; // สีเขียว
-                }
-            }
-        });
-    </script>
+<script>
+    // ใช้รหัสเชื่อมต่อของคุณ
+    const firebaseConfig = {
+        apiKey: "AIzaSyD0N5IXpX-9EV921fel1JiuL8MTtCtGeA0",
+        authDomain: "projectiot-db190.firebaseapp.com",
+        databaseURL: "https://projectiot-db190-default-rtdb.firebaseio.com",
+        projectId: "projectiot-db190",
+        storageBucket: "projectiot-db190.firebasestorage.app",
+        messagingSenderId: "842747547826",
+        appId: "1:842747547826:web:c3ffa0cad0beacb60a39ab"
+    };
+
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
+
+    // ดึงค่าระยะทาง
+    database.ref('/sensor/distance').on('value', (s) => {
+        const val = s.val();
+        const distElem = document.getElementById('distance');
+        distElem.innerText = val !== null ? val : "--";
+        
+        // เปลี่ยนสีตามระยะทาง
+        if (val < 15) distElem.style.color = "#ff4b2b";
+        else distElem.style.color = "#4facfe";
+    });
+
+    // ฟังก์ชันควบคุม
+    function control(v) {
+        database.ref('/control/buzzer').set(v);
+    }
+
+    // อัปเดตสถานะปุ่ม
+    database.ref('/control/buzzer').on('value', (s) => {
+        document.getElementById('status-text').innerText = s.val() == 1 ? "เปิดการทำงาน" : "ปิดการทำงาน";
+    });
+</script>
+
 </body>
 </html>
