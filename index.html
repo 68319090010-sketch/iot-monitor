@@ -1,228 +1,165 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>IoT Smart Monitor</title>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
-    <style>
-        :root {
-            --primary-color: #4facfe;
-            --secondary-color: #00f2fe;
-            --danger-color: #ff4b2b;
-            --success-color: #00b09b;
-            --dark-color: #2c3e50;
-        }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Smart Monitor</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4facfe;
+            --secondary-color: #00f2fe;
+            --danger-color: #ff4b2b;
+            --success-color: #00b09b;
+            --dark-color: #2c3e50;
+        }
+        body {
+            font-family: 'Kanit', sans-serif;
+            background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+            margin: 0;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+        }
+        .container {
+            width: 90%;
+            max-width: 450px;
+            background: white;
+            padding: 30px;
+            border-radius: 30px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        .header h1 {
+            color: var(--dark-color);
+            margin-bottom: 5px;
+            font-size: 24px;
+        }
+        .status-dot {
+            height: 10px;
+            width: 10px;
+            background-color: #bbb;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 5px;
+        }
+        .online { background-color: var(--success-color); box-shadow: 0 0 8px var(--success-color); }
 
-        body {
-            font-family: 'Kanit', sans-serif;
-            margin: 0;
-            overflow: hidden; /* ป้องกันการเลื่อนหน้าจอ */
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            min-height: 100vh;
-            background: #0f2027; /* สีพื้นหลังหลัก */
-        }
+        .display-card {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 20px;
+            margin: 25px 0;
+            border: 1px solid #eee;
+        }
+        .value {
+            font-size: 72px;
+            font-weight: bold;
+            color: var(--primary-color);
+            line-height: 1;
+        }
+        .unit { color: #95a5a6; font-size: 18px; }
 
-        /* --- ส่วนของพื้นหลังเคลื่อนไหว --- */
-        .background {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            z-index: -1;
-            background: linear-gradient(to bottom, #2c3e50, #000000);
-        }
-
-        .circles {
-            position: absolute;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            overflow: hidden;
-        }
-
-        .circles li {
-            position: absolute;
-            display: block;
-            list-style: none;
-            width: 20px;
-            height: 20px;
-            background: rgba(255, 255, 255, 0.1);
-            animation: animate 25s linear infinite;
-            bottom: -150px;
-        }
-
-        /* กำหนดขนาดและตำแหน่งสุ่มของวงกลม */
-        .circles li:nth-child(1){ left: 25%; width: 80px; height: 80px; animation-delay: 0s; }
-        .circles li:nth-child(2){ left: 10%; width: 20px; height: 20px; animation-delay: 2s; animation-duration: 12s; }
-        .circles li:nth-child(3){ left: 70%; width: 20px; height: 20px; animation-delay: 4s; }
-        .circles li:nth-child(4){ left: 40%; width: 60px; height: 60px; animation-delay: 0s; animation-duration: 18s; }
-        .circles li:nth-child(5){ left: 65%; width: 20px; height: 20px; animation-delay: 0s; }
-        .circles li:nth-child(6){ left: 75%; width: 110px; height: 110px; animation-delay: 3s; }
-        .circles li:nth-child(7){ left: 35%; width: 150px; height: 150px; animation-delay: 7s; }
-        .circles li:nth-child(8){ left: 50%; width: 25px; height: 25px; animation-delay: 15s; animation-duration: 45s; }
-        .circles li:nth-child(9){ left: 20%; width: 15px; height: 15px; animation-delay: 2s; animation-duration: 35s; }
-        .circles li:nth-child(10){ left: 85%; width: 150px; height: 150px; animation-delay: 0s; animation-duration: 11s; }
-
-        @keyframes animate {
-            0%{ transform: translateY(0) rotate(0deg); opacity: 1; border-radius: 0; }
-            100%{ transform: translateY(-1000px) rotate(720deg); opacity: 0; border-radius: 50%; }
-        }
-        /* --- จบส่วนพื้นหลัง --- */
-
-        .container {
-            width: 90%;
-            max-width: 420px;
-            background: rgba(255, 255, 255, 0.95); /* ขาวแบบโปร่งแสงเล็กน้อย */
-            padding: 30px;
-            border-radius: 30px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
-            text-align: center;
-            backdrop-filter: blur(10px); /* เอฟเฟกต์กระจกฝ้า */
-            z-index: 1;
-        }
-
-        .header h1 { color: var(--dark-color); margin-bottom: 5px; font-size: 26px; }
-        
-        .status-dot {
-            height: 12px;
-            width: 12px;
-            background-color: #bbb;
-            border-radius: 50%;
-            display: inline-block;
-            margin-right: 8px;
-        }
-        .online { background-color: var(--success-color); box-shadow: 0 0 10px var(--success-color); }
-
-        .display-card {
-            background: #f8f9fa;
-            padding: 25px;
-            border-radius: 20px;
-            margin: 25px 0;
-            border: 1px solid #eee;
-            transition: 0.3s;
-        }
-
-        .value {
-            font-size: 80px;
-            font-weight: bold;
-            color: var(--primary-color);
-            line-height: 1;
-            margin: 10px 0;
-        }
-
-        .unit { color: #95a5a6; font-size: 20px; font-weight: 300; }
-
-        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
-
-        .btn {
-            border: none;
-            padding: 18px;
-            border-radius: 15px;
-            color: white;
-            font-size: 16px;
-            font-weight: bold;
-            cursor: pointer;
-            transition: 0.3s;
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            gap: 10px;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
-        }
-
-        .btn-on { background: linear-gradient(135deg, #11998e, #38ef7d); }
-        .btn-off { background: linear-gradient(135deg, #ff4b2b, #ff416c); }
-        
-        .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
-        .btn:active { transform: scale(0.95); }
-        
-        #current-status {
-            margin-top: 25px;
-            font-size: 15px;
-            color: #555;
-            background: rgba(0,0,0,0.05);
-            padding: 10px;
-            border-radius: 12px;
-        }
-    </style>
-    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500&display=swap" rel="stylesheet">
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+        .btn {
+            border: none;
+            padding: 15px;
+            border-radius: 15px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+        .btn-on { background: linear-gradient(to right, #11998e, #38ef7d); }
+        .btn-off { background: linear-gradient(to right, #ff4b2b, #ff416c); }
+        .btn:active { transform: scale(0.95); }
+        
+        #current-status {
+            margin-top: 20px;
+            font-size: 14px;
+            color: var(--dark-color);
+            background: #f1f2f6;
+            padding: 8px;
+            border-radius: 10px;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500&display=swap" rel="stylesheet">
 </head>
 <body>
 
-<div class="background">
-    <ul class="circles">
-        <li></li><li></li><li></li><li></li><li></li>
-        <li></li><li></li><li></li><li></li><li></li>
-    </ul>
-</div>
-
 <div class="container">
-    <div class="header">
-        <h1><i class="fas fa-satellite-dish"></i> Smart Monitor</h1>
-        <p><span class="status-dot online"></span> ระบบเชื่อมต่อเรียบร้อย</p>
-    </div>
+    <div class="header">
+        <h1><i class="fas fa-microchip"></i> IoT Dashboard</h1>
+        <p><span class="status-dot online"></span> ระบบเชื่อมต่อแล้ว</p>
+    </div>
 
-    <div class="display-card">
-        <p style="margin:0; color: #7f8c8d; font-size: 16px;">ระยะทางปัจจุบัน</p>
-        <div id="distance" class="value">--</div>
-        <div class="unit">cm</div>
-    </div>
+    <div class="display-card">
+        <p style="margin:0; color: #7f8c8d;">ระยะทางที่วัดได้</p>
+        <div id="distance" class="value">--</div>
+        <div class="unit">เซนติเมตร (cm)</div>
+    </div>
 
-    <div class="controls">
-        <button class="btn btn-on" onclick="control(1)">
-            <i class="fas fa-power-off fa-lg"></i>
-            เปิดเสียง
-        </button>
-        <button class="btn btn-off" onclick="control(0)">
-            <i class="fas fa-volume-mute fa-lg"></i>
-            ปิดเสียง
-        </button>
-    </div>
+    <div class="controls">
+        <button class="btn btn-on" onclick="control(1)">
+            <i class="fas fa-volume-up fa-lg"></i>
+            เปิดระบบเสียง
+        </button>
+        <button class="btn btn-off" onclick="control(0)">
+            <i class="fas fa-volume-mute fa-lg"></i>
+            ปิดระบบเสียง
+        </button>
+    </div>
 
-    <div id="current-status">
-        <i class="fas fa-info-circle"></i> สถานะลำโพง: <span id="status-text" style="font-weight: 500;">รอข้อมูล...</span>
-    </div>
+    <div id="current-status">สถานะระบบ: <span id="status-text">กำลังโหลด...</span></div>
 </div>
 
 <script>
-    const firebaseConfig = {
-        apiKey: "AIzaSyD0N5IXpX-9EV921fel1JiuL8MTtCtGeA0",
-        authDomain: "projectiot-db190.firebaseapp.com",
-        databaseURL: "https://projectiot-db190-default-rtdb.firebaseio.com",
-        projectId: "projectiot-db190",
-        storageBucket: "projectiot-db190.firebasestorage.app",
-        messagingSenderId: "842747547826",
-        appId: "1:842747547826:web:c3ffa0cad0beacb60a39ab"
-    };
+    // ใช้รหัสเชื่อมต่อของคุณ
+    const firebaseConfig = {
+        apiKey: "AIzaSyD0N5IXpX-9EV921fel1JiuL8MTtCtGeA0",
+        authDomain: "projectiot-db190.firebaseapp.com",
+        databaseURL: "https://projectiot-db190-default-rtdb.firebaseio.com",
+        projectId: "projectiot-db190",
+        storageBucket: "projectiot-db190.firebasestorage.app",
+        messagingSenderId: "842747547826",
+        appId: "1:842747547826:web:c3ffa0cad0beacb60a39ab"
+    };
 
-    firebase.initializeApp(firebaseConfig);
-    const database = firebase.database();
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
 
-    database.ref('/sensor/distance').on('value', (s) => {
-        const val = s.val();
-        const distElem = document.getElementById('distance');
-        distElem.innerText = val !== null ? val : "--";
-        if (val < 15) distElem.style.color = "#ff4b2b";
-        else distElem.style.color = "#4facfe";
-    });
+    // ดึงค่าระยะทาง
+    database.ref('/sensor/distance').on('value', (s) => {
+        const val = s.val();
+        const distElem = document.getElementById('distance');
+        distElem.innerText = val !== null ? val : "--";
+        
+        // เปลี่ยนสีตามระยะทาง
+        if (val < 15) distElem.style.color = "#ff4b2b";
+        else distElem.style.color = "#4facfe";
+    });
 
-    function control(v) {
-        database.ref('/control/buzzer').set(v);
-    }
+    // ฟังก์ชันควบคุม
+    function control(v) {
+        database.ref('/control/buzzer').set(v);
+    }
 
-    database.ref('/control/buzzer').on('value', (s) => {
-        const isEnabled = s.val() == 1;
-        const textElem = document.getElementById('status-text');
-        textElem.innerText = isEnabled ? "เปิดการทำงาน" : "ปิดการทำงาน";
-        textElem.style.color = isEnabled ? "#00b09b" : "#ff4b2b";
-    });
+    // อัปเดตสถานะปุ่ม
+    database.ref('/control/buzzer').on('value', (s) => {
+        document.getElementById('status-text').innerText = s.val() == 1 ? "เปิดการทำงาน" : "ปิดการทำงาน";
+    });
 </script>
 
 </body>
