@@ -13,15 +13,15 @@
 
 <style>
 :root{
-  --bg-main:#1f2a37;
-  --bg-sub:#111827;
-  --card:#f8fafc;
+  --bg-main:#0f172a;
+  --bg-sub:#020617;
   --container:#f1f5f9;
-  --text-main:#1e293b;
-  --text-sub:#64748b;
+  --card:#f8fafc;
+  --text-main:#0f172a;
+  --text-sub:#475569;
   --blue:#4facfe;
   --danger:#ff4b2b;
-  --success:#10b981;
+  --success:#22c55e;
 }
 
 *{
@@ -35,20 +35,23 @@ body{
   display:flex;
   justify-content:center;
   align-items:center;
-  background:linear-gradient(135deg,var(--bg-main),var(--bg-sub));
+  background:radial-gradient(circle at top,var(--bg-main),var(--bg-sub));
 }
 
-/* กล่องหลัก */
+/* ===== Container ===== */
 .container{
   width:92%;
   max-width:420px;
-  padding:30px;
+  padding:32px;
   border-radius:32px;
   background:var(--container);
-  box-shadow:0 25px 50px rgba(0,0,0,.35);
+  border:1px solid rgba(255,255,255,0.8);
+  box-shadow:
+    0 35px 70px rgba(0,0,0,0.55),
+    inset 0 1px 0 rgba(255,255,255,0.9);
 }
 
-/* Header */
+/* ===== Header ===== */
 .header{
   text-align:center;
 }
@@ -70,19 +73,18 @@ body{
   height:10px;
   border-radius:50%;
   background:var(--success);
-  box-shadow:0 0 10px var(--success);
+  box-shadow:0 0 8px var(--success);
   margin-right:6px;
 }
 
-/* Card */
+/* ===== Card ===== */
 .card{
-  margin:25px 0;
-  padding:28px;
-  border-radius:24px;
+  margin:26px 0;
+  padding:30px;
+  border-radius:26px;
   background:var(--card);
   border:1px solid #e5e7eb;
   text-align:center;
-  color:var(--text-main);
 }
 
 .card p{
@@ -91,20 +93,20 @@ body{
 }
 
 .value{
-  margin:12px 0;
-  font-size:78px;
+  margin:14px 0;
+  font-size:80px;
   font-weight:700;
   color:var(--blue);
 }
 
 .value.danger{
   color:var(--danger);
-  animation:pulse .8s infinite;
+  animation:pulse .9s infinite;
 }
 
 @keyframes pulse{
   0%{transform:scale(1)}
-  50%{transform:scale(1.05)}
+  50%{transform:scale(1.06)}
   100%{transform:scale(1)}
 }
 
@@ -112,24 +114,25 @@ small{
   color:var(--text-sub);
 }
 
-/* Controls */
+/* ===== Controls ===== */
 .controls{
   display:grid;
   grid-template-columns:1fr 1fr;
-  gap:15px;
+  gap:16px;
 }
 
-/* ปุ่ม */
+/* ===== Buttons ===== */
 button{
   border:none;
-  border-radius:18px;
+  border-radius:20px;
   padding:18px;
   font-size:16px;
   font-weight:600;
   color:#fff;
   cursor:pointer;
-  transition:.25s;
-  box-shadow:0 8px 20px rgba(0,0,0,.25);
+  background:transparent;
+  transition:.25s ease;
+  box-shadow:0 10px 22px rgba(0,0,0,0.25);
 }
 
 button.on{
@@ -141,19 +144,19 @@ button.off{
 }
 
 button:hover{
-  transform:translateY(-4px);
-  box-shadow:0 12px 28px rgba(0,0,0,.35);
+  transform:translateY(-5px);
+  box-shadow:0 16px 32px rgba(0,0,0,0.35);
 }
 
 button:active{
-  transform:scale(.95);
+  transform:scale(.94);
 }
 
-/* Status Box */
+/* ===== Status Box ===== */
 .status-box{
   margin-top:22px;
-  padding:12px;
-  border-radius:14px;
+  padding:14px;
+  border-radius:16px;
   background:#e5e7eb;
   color:#334155;
   font-size:14px;
@@ -217,7 +220,7 @@ db.ref("/control/buzzer").on("value", s => {
   const on = s.val() == 1;
   const t = document.getElementById("status-text");
   t.textContent = on ? "เปิดการทำงาน" : "ปิดการทำงาน";
-  t.style.color = on ? "#10b981" : "#ff4b2b";
+  t.style.color = on ? "#22c55e" : "#ff4b2b";
 });
 </script>
 
