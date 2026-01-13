@@ -1,204 +1,228 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IoT Smart Monitor</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Smart Monitor</title>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <style>
+        :root {
+            --primary-color: #4facfe;
+            --secondary-color: #00f2fe;
+            --danger-color: #ff4b2b;
+            --success-color: #00b09b;
+            --dark-color: #2c3e50;
+        }
 
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+        body {
+            font-family: 'Kanit', sans-serif;
+            margin: 0;
+            overflow: hidden; /* ป้องกันการเลื่อนหน้าจอ */
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            background: #0f2027; /* สีพื้นหลังหลัก */
+        }
 
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+        /* --- ส่วนของพื้นหลังเคลื่อนไหว --- */
+        .background {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: -1;
+            background: linear-gradient(to bottom, #2c3e50, #000000);
+        }
 
-<style>
-:root{
-  --main:#4facfe;
-  --danger:#ff416c;
-  --success:#2ecc71;
-  --glass:rgba(255,255,255,.15);
-}
+        .circles {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+        }
 
-*{box-sizing:border-box;font-family:'Kanit',sans-serif;}
+        .circles li {
+            position: absolute;
+            display: block;
+            list-style: none;
+            width: 20px;
+            height: 20px;
+            background: rgba(255, 255, 255, 0.1);
+            animation: animate 25s linear infinite;
+            bottom: -150px;
+        }
 
-body{
-  margin:0;
-  min-height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:linear-gradient(-45deg,#141e30,#243b55,#000428,#004e92);
-  background-size:400% 400%;
-  animation:bgMove 15s ease infinite;
-  color:#fff;
-}
+        /* กำหนดขนาดและตำแหน่งสุ่มของวงกลม */
+        .circles li:nth-child(1){ left: 25%; width: 80px; height: 80px; animation-delay: 0s; }
+        .circles li:nth-child(2){ left: 10%; width: 20px; height: 20px; animation-delay: 2s; animation-duration: 12s; }
+        .circles li:nth-child(3){ left: 70%; width: 20px; height: 20px; animation-delay: 4s; }
+        .circles li:nth-child(4){ left: 40%; width: 60px; height: 60px; animation-delay: 0s; animation-duration: 18s; }
+        .circles li:nth-child(5){ left: 65%; width: 20px; height: 20px; animation-delay: 0s; }
+        .circles li:nth-child(6){ left: 75%; width: 110px; height: 110px; animation-delay: 3s; }
+        .circles li:nth-child(7){ left: 35%; width: 150px; height: 150px; animation-delay: 7s; }
+        .circles li:nth-child(8){ left: 50%; width: 25px; height: 25px; animation-delay: 15s; animation-duration: 45s; }
+        .circles li:nth-child(9){ left: 20%; width: 15px; height: 15px; animation-delay: 2s; animation-duration: 35s; }
+        .circles li:nth-child(10){ left: 85%; width: 150px; height: 150px; animation-delay: 0s; animation-duration: 11s; }
 
-@keyframes bgMove{
-  0%{background-position:0% 50%}
-  50%{background-position:100% 50%}
-  100%{background-position:0% 50%}
-}
+        @keyframes animate {
+            0%{ transform: translateY(0) rotate(0deg); opacity: 1; border-radius: 0; }
+            100%{ transform: translateY(-1000px) rotate(720deg); opacity: 0; border-radius: 50%; }
+        }
+        /* --- จบส่วนพื้นหลัง --- */
 
-.container{
-  width:92%;
-  max-width:420px;
-  padding:30px;
-  border-radius:30px;
-  background:var(--glass);
-  backdrop-filter:blur(20px);
-  box-shadow:0 20px 40px rgba(0,0,0,.4);
-  animation:fadeUp .8s ease;
-}
+        .container {
+            width: 90%;
+            max-width: 420px;
+            background: rgba(255, 255, 255, 0.95); /* ขาวแบบโปร่งแสงเล็กน้อย */
+            padding: 30px;
+            border-radius: 30px;
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
+            text-align: center;
+            backdrop-filter: blur(10px); /* เอฟเฟกต์กระจกฝ้า */
+            z-index: 1;
+        }
 
-@keyframes fadeUp{
-  from{opacity:0;transform:translateY(30px)}
-  to{opacity:1;transform:translateY(0)}
-}
+        .header h1 { color: var(--dark-color); margin-bottom: 5px; font-size: 26px; }
+        
+        .status-dot {
+            height: 12px;
+            width: 12px;
+            background-color: #bbb;
+            border-radius: 50%;
+            display: inline-block;
+            margin-right: 8px;
+        }
+        .online { background-color: var(--success-color); box-shadow: 0 0 10px var(--success-color); }
 
-.header h1{
-  margin:0;
-  text-align:center;
-}
+        .display-card {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 20px;
+            margin: 25px 0;
+            border: 1px solid #eee;
+            transition: 0.3s;
+        }
 
-.status{
-  margin-top:10px;
-  text-align:center;
-  font-size:14px;
-}
+        .value {
+            font-size: 80px;
+            font-weight: bold;
+            color: var(--primary-color);
+            line-height: 1;
+            margin: 10px 0;
+        }
 
-.dot{
-  display:inline-block;
-  width:10px;height:10px;
-  border-radius:50%;
-  background:var(--success);
-  box-shadow:0 0 10px var(--success);
-  animation:pulse 1.5s infinite;
-}
+        .unit { color: #95a5a6; font-size: 20px; font-weight: 300; }
 
-@keyframes pulse{
-  0%{box-shadow:0 0 5px var(--success)}
-  50%{box-shadow:0 0 15px var(--success)}
-  100%{box-shadow:0 0 5px var(--success)}
-}
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; }
 
-.card{
-  margin:25px 0;
-  padding:25px;
-  border-radius:25px;
-  background:rgba(255,255,255,.9);
-  color:#333;
-  text-align:center;
-  transition:.3s;
-}
+        .btn {
+            border: none;
+            padding: 18px;
+            border-radius: 15px;
+            color: white;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.3s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.2);
+        }
 
-.card:hover{transform:translateY(-5px)}
-
-.value{
-  font-size:78px;
-  font-weight:700;
-  color:var(--main);
-}
-
-.value.danger{
-  color:var(--danger);
-  animation:shake .4s infinite;
-}
-
-@keyframes shake{
-  0%{transform:scale(1)}
-  50%{transform:scale(1.05)}
-  100%{transform:scale(1)}
-}
-
-.controls{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:15px;
-}
-
-button{
-  border:none;
-  border-radius:18px;
-  padding:18px;
-  font-size:16px;
-  font-weight:600;
-  color:#fff;
-  cursor:pointer;
-  transition:.3s;
-}
-
-.on{background:linear-gradient(135deg,#11998e,#38ef7d)}
-.off{background:linear-gradient(135deg,#ff416c,#ff4b2b)}
-
-button:hover{transform:translateY(-3px)}
-
-.status-box{
-  margin-top:20px;
-  padding:12px;
-  border-radius:15px;
-  background:rgba(0,0,0,.25);
-  font-size:14px;
-  text-align:center;
-}
-</style>
+        .btn-on { background: linear-gradient(135deg, #11998e, #38ef7d); }
+        .btn-off { background: linear-gradient(135deg, #ff4b2b, #ff416c); }
+        
+        .btn:hover { transform: translateY(-3px); box-shadow: 0 6px 20px rgba(0,0,0,0.3); }
+        .btn:active { transform: scale(0.95); }
+        
+        #current-status {
+            margin-top: 25px;
+            font-size: 15px;
+            color: #555;
+            background: rgba(0,0,0,0.05);
+            padding: 10px;
+            border-radius: 12px;
+        }
+    </style>
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500&display=swap" rel="stylesheet">
 </head>
-
 <body>
 
+<div class="background">
+    <ul class="circles">
+        <li></li><li></li><li></li><li></li><li></li>
+        <li></li><li></li><li></li><li></li><li></li>
+    </ul>
+</div>
+
 <div class="container">
-  <div class="header">
-    <h1><i class="fa-solid fa-tower-broadcast"></i> Smart Monitor</h1>
-    <div class="status">
-      <span class="dot"></span> Online
+    <div class="header">
+        <h1><i class="fas fa-satellite-dish"></i> Smart Monitor</h1>
+        <p><span class="status-dot online"></span> ระบบเชื่อมต่อเรียบร้อย</p>
     </div>
-  </div>
 
-  <div class="card">
-    <p>ระยะทางปัจจุบัน</p>
-    <div id="distance" class="value">--</div>
-    <small>cm</small>
-  </div>
+    <div class="display-card">
+        <p style="margin:0; color: #7f8c8d; font-size: 16px;">ระยะทางปัจจุบัน</p>
+        <div id="distance" class="value">--</div>
+        <div class="unit">cm</div>
+    </div>
 
-  <div class="controls">
-    <button class="on" onclick="control(1)">
-      <i class="fa-solid fa-volume-high"></i><br>เปิดเสียง
-    </button>
-    <button class="off" onclick="control(0)">
-      <i class="fa-solid fa-volume-xmark"></i><br>ปิดเสียง
-    </button>
-  </div>
+    <div class="controls">
+        <button class="btn btn-on" onclick="control(1)">
+            <i class="fas fa-power-off fa-lg"></i>
+            เปิดเสียง
+        </button>
+        <button class="btn btn-off" onclick="control(0)">
+            <i class="fas fa-volume-mute fa-lg"></i>
+            ปิดเสียง
+        </button>
+    </div>
 
-  <div class="status-box">
-    สถานะลำโพง: <b id="status-text">รอข้อมูล...</b>
-  </div>
+    <div id="current-status">
+        <i class="fas fa-info-circle"></i> สถานะลำโพง: <span id="status-text" style="font-weight: 500;">รอข้อมูล...</span>
+    </div>
 </div>
 
 <script>
-firebase.initializeApp({
-  apiKey: "AIzaSyD0N5IXpX-9EV921fel1JiuL8MTtCtGeA0",
-  authDomain: "projectiot-db190.firebaseapp.com",
-  databaseURL: "https://projectiot-db190-default-rtdb.firebaseio.com"
-});
+    const firebaseConfig = {
+        apiKey: "AIzaSyD0N5IXpX-9EV921fel1JiuL8MTtCtGeA0",
+        authDomain: "projectiot-db190.firebaseapp.com",
+        databaseURL: "https://projectiot-db190-default-rtdb.firebaseio.com",
+        projectId: "projectiot-db190",
+        storageBucket: "projectiot-db190.firebasestorage.app",
+        messagingSenderId: "842747547826",
+        appId: "1:842747547826:web:c3ffa0cad0beacb60a39ab"
+    };
 
-const db=firebase.database();
+    firebase.initializeApp(firebaseConfig);
+    const database = firebase.database();
 
-db.ref("/sensor/distance").on("value",s=>{
-  const v=s.val();
-  const el=document.getElementById("distance");
-  el.textContent=v ?? "--";
-  el.classList.toggle("danger",v<15);
-});
+    database.ref('/sensor/distance').on('value', (s) => {
+        const val = s.val();
+        const distElem = document.getElementById('distance');
+        distElem.innerText = val !== null ? val : "--";
+        if (val < 15) distElem.style.color = "#ff4b2b";
+        else distElem.style.color = "#4facfe";
+    });
 
-function control(v){
-  db.ref("/control/buzzer").set(v);
-}
+    function control(v) {
+        database.ref('/control/buzzer').set(v);
+    }
 
-db.ref("/control/buzzer").on("value",s=>{
-  const on=s.val()==1;
-  const t=document.getElementById("status-text");
-  t.textContent=on?"เปิดการทำงาน":"ปิดการทำงาน";
-  t.style.color=on?"#2ecc71":"#ff4b2b";
-});
+    database.ref('/control/buzzer').on('value', (s) => {
+        const isEnabled = s.val() == 1;
+        const textElem = document.getElementById('status-text');
+        textElem.innerText = isEnabled ? "เปิดการทำงาน" : "ปิดการทำงาน";
+        textElem.style.color = isEnabled ? "#00b09b" : "#ff4b2b";
+    });
 </script>
 
 </body>
