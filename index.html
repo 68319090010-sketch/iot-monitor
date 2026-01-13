@@ -13,9 +13,15 @@
 
 <style>
 :root{
-  --main:#4facfe;
+  --bg-main:#1f2a37;
+  --bg-sub:#111827;
+  --card:#f8fafc;
+  --container:#f1f5f9;
+  --text-main:#1e293b;
+  --text-sub:#64748b;
+  --blue:#4facfe;
   --danger:#ff4b2b;
-  --success:#2ecc71;
+  --success:#10b981;
 }
 
 *{
@@ -29,35 +35,33 @@ body{
   display:flex;
   justify-content:center;
   align-items:center;
-  background:linear-gradient(-45deg,#141e30,#243b55,#000428,#004e92);
-  background-size:400% 400%;
-  animation:bgMove 15s ease infinite;
-  color:#fff;
+  background:linear-gradient(135deg,var(--bg-main),var(--bg-sub));
 }
 
-@keyframes bgMove{
-  0%{background-position:0% 50%}
-  50%{background-position:100% 50%}
-  100%{background-position:0% 50%}
-}
-
+/* กล่องหลัก */
 .container{
   width:92%;
   max-width:420px;
   padding:30px;
-  border-radius:30px;
-  background:rgba(255,255,255,0.12);
-  backdrop-filter:blur(20px);
-  box-shadow:0 20px 40px rgba(0,0,0,.4);
+  border-radius:32px;
+  background:var(--container);
+  box-shadow:0 25px 50px rgba(0,0,0,.35);
 }
 
+/* Header */
 .header{
   text-align:center;
 }
 
+.header h1{
+  margin:0;
+  color:var(--text-main);
+}
+
 .status{
-  margin-top:8px;
+  margin-top:10px;
   font-size:14px;
+  color:var(--text-sub);
 }
 
 .dot{
@@ -67,22 +71,155 @@ body{
   border-radius:50%;
   background:var(--success);
   box-shadow:0 0 10px var(--success);
-  animation:pulse 1.5s infinite;
+  margin-right:6px;
+}
+
+/* Card */
+.card{
+  margin:25px 0;
+  padding:28px;
+  border-radius:24px;
+  background:var(--card);
+  border:1px solid #e5e7eb;
+  text-align:center;
+  color:var(--text-main);
+}
+
+.card p{
+  margin:0;
+  color:var(--text-sub);
+}
+
+.value{
+  margin:12px 0;
+  font-size:78px;
+  font-weight:700;
+  color:var(--blue);
+}
+
+.value.danger{
+  color:var(--danger);
+  animation:pulse .8s infinite;
 }
 
 @keyframes pulse{
-  0%{box-shadow:0 0 5px var(--success)}
-  50%{box-shadow:0 0 15px var(--success)}
-  100%{box-shadow:0 0 5px var(--success)}
+  0%{transform:scale(1)}
+  50%{transform:scale(1.05)}
+  100%{transform:scale(1)}
 }
 
-.card{
-  margin:25px 0;
-  padding:25px;
-  border-radius:25px;
-  background:rgba(255,255,255,.95);
-  color:#333;
+small{
+  color:var(--text-sub);
+}
+
+/* Controls */
+.controls{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:15px;
+}
+
+/* ปุ่ม */
+button{
+  border:none;
+  border-radius:18px;
+  padding:18px;
+  font-size:16px;
+  font-weight:600;
+  color:#fff;
+  cursor:pointer;
+  transition:.25s;
+  box-shadow:0 8px 20px rgba(0,0,0,.25);
+}
+
+button.on{
+  background:linear-gradient(135deg,#10b981,#34d399);
+}
+
+button.off{
+  background:linear-gradient(135deg,#ff416c,#ff4b2b);
+}
+
+button:hover{
+  transform:translateY(-4px);
+  box-shadow:0 12px 28px rgba(0,0,0,.35);
+}
+
+button:active{
+  transform:scale(.95);
+}
+
+/* Status Box */
+.status-box{
+  margin-top:22px;
+  padding:12px;
+  border-radius:14px;
+  background:#e5e7eb;
+  color:#334155;
+  font-size:14px;
   text-align:center;
 }
+</style>
+</head>
 
-.va
+<body>
+
+<div class="container">
+  <div class="header">
+    <h1><i class="fa-solid fa-wifi"></i> Smart Monitor</h1>
+    <div class="status">
+      <span class="dot"></span> ระบบเชื่อมต่อเรียบร้อย
+    </div>
+  </div>
+
+  <div class="card">
+    <p>ระยะทางปัจจุบัน</p>
+    <div id="distance" class="value">--</div>
+    <small>cm</small>
+  </div>
+
+  <div class="controls">
+    <button class="on" onclick="control(1)">
+      <i class="fa-solid fa-power-off"></i><br>เปิดเสียง
+    </button>
+    <button class="off" onclick="control(0)">
+      <i class="fa-solid fa-volume-xmark"></i><br>ปิดเสียง
+    </button>
+  </div>
+
+  <div class="status-box">
+    <i class="fa-solid fa-circle-info"></i>
+    สถานะลำโพง: <b id="status-text">รอข้อมูล...</b>
+  </div>
+</div>
+
+<script>
+firebase.initializeApp({
+  apiKey: "AIzaSyD0N5IXpX-9EV921fel1JiuL8MTtCtGeA0",
+  authDomain: "projectiot-db190.firebaseapp.com",
+  databaseURL: "https://projectiot-db190-default-rtdb.firebaseio.com"
+});
+
+const db = firebase.database();
+
+db.ref("/sensor/distance").on("value", s => {
+  const v = s.val();
+  const el = document.getElementById("distance");
+  el.textContent = v ?? "--";
+  el.classList.toggle("danger", v < 15);
+});
+
+function control(v){
+  db.ref("/control/buzzer").set(v);
+}
+
+db.ref("/control/buzzer").on("value", s => {
+  const on = s.val() == 1;
+  const t = document.getElementById("status-text");
+  t.textContent = on ? "เปิดการทำงาน" : "ปิดการทำงาน";
+  t.style.color = on ? "#10b981" : "#ff4b2b";
+});
+</script>
+
+</body>
+</html>
