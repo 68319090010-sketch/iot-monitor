@@ -1,189 +1,161 @@
 <!DOCTYPE html>
 <html lang="th">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>IoT Smart Monitor</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IoT Smart Monitor - Video Edition</title>
 
-<link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500;700&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
+    <link href="https://fonts.googleapis.com/css2?family=Kanit:wght@300;500;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css">
 
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
-<script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.0/firebase-database.js"></script>
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 
-<style>
-:root{
-  --bg-main:#0f172a;
-  --bg-sub:#020617;
-  --container:#f1f5f9;
-  --card:#f8fafc;
-  --text-main:#0f172a;
-  --text-sub:#475569;
-  --blue:#4facfe;
-  --danger:#ff4b2b;
-  --success:#22c55e;
-}
+    <style>
+        :root {
+            --bg-overlay: rgba(15, 23, 42, 0.7);
+            --container-glass: rgba(255, 255, 255, 0.1);
+            --card-glass: rgba(255, 255, 255, 0.15);
+            --text-light: #f8fafc;
+            --blue: #00d2ff;
+            --danger: #ff4b2b;
+            --success: #22c55e;
+        }
 
-*{
-  box-sizing:border-box;
-  font-family:'Kanit',sans-serif;
-}
+        * { box-sizing: border-box; font-family: 'Kanit', sans-serif; }
 
-body{
-  margin:0;
-  min-height:100vh;
-  display:flex;
-  justify-content:center;
-  align-items:center;
-  background:radial-gradient(circle at top,var(--bg-main),var(--bg-sub));
-}
+        body {
+            margin: 0;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden; /* กันการ scroll ถ้าวิดีโอใหญ่เกิน */
+            background: #000;
+        }
 
-/* ===== Container ===== */
-.container{
-  width:92%;
-  max-width:420px;
-  padding:32px;
-  border-radius:32px;
-  background:var(--container);
-  border:1px solid rgba(255,255,255,0.8);
-  box-shadow:
-    0 35px 70px rgba(0,0,0,0.55),
-    inset 0 1px 0 rgba(255,255,255,0.9);
-}
+        /* ===== Video Background ===== */
+        #video-bg {
+            position: fixed;
+            right: 0;
+            bottom: 0;
+            min-width: 100%;
+            min-height: 100%;
+            z-index: -1;
+            filter: brightness(0.4) blur(3px); /* ทำให้วิดีโอมืดลงและเบลอเล็กน้อย */
+            object-fit: cover;
+        }
 
-/* ===== Header ===== */
-.header{
-  text-align:center;
-}
+        /* ===== Container Glassmorphism ===== */
+        .container {
+            width: 92%;
+            max-width: 420px;
+            padding: 32px;
+            border-radius: 32px;
+            background: var(--container-glass);
+            backdrop-filter: blur(20px); /* เอฟเฟคกระจกฝ้า */
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            box-shadow: 0 25px 50px rgba(0, 0, 0, 0.5);
+            color: var(--text-light);
+            position: relative;
+            z-index: 1;
+        }
 
-.header h1{
-  margin:0;
-  color:var(--text-main);
-}
+        .header h1 { margin: 0; color: #fff; text-shadow: 0 0 10px rgba(0,210,255,0.5); }
+        .status { margin-top: 10px; font-size: 14px; color: #cbd5e1; }
 
-.status{
-  margin-top:10px;
-  font-size:14px;
-  color:var(--text-sub);
-}
+        .dot {
+            display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+            background: var(--success); box-shadow: 0 0 12px var(--success);
+            margin-right: 6px; animation: blink 1.5s infinite;
+        }
 
-.dot{
-  display:inline-block;
-  width:10px;
-  height:10px;
-  border-radius:50%;
-  background:var(--success);
-  box-shadow:0 0 8px var(--success);
-  margin-right:6px;
-}
+        @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.4; } }
 
-/* ===== Card ===== */
-.card{
-  margin:26px 0;
-  padding:30px;
-  border-radius:26px;
-  background:var(--card);
-  border:1px solid #e5e7eb;
-  text-align:center;
-}
+        /* ===== Card ===== */
+        .card {
+            margin: 20px 0;
+            padding: 25px;
+            border-radius: 26px;
+            background: var(--card-glass);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            text-align: center;
+            transition: 0.3s;
+        }
 
-.card p{
-  margin:0;
-  color:var(--text-sub);
-}
+        .card p { margin: 0; color: #cbd5e1; letter-spacing: 1px; }
 
-.value{
-  margin:14px 0;
-  font-size:80px;
-  font-weight:700;
-  color:var(--blue);
-}
+        .value {
+            margin: 10px 0;
+            font-size: 70px;
+            font-weight: 700;
+            color: var(--blue);
+            text-shadow: 0 0 20px rgba(0, 210, 255, 0.6);
+        }
 
-.value.danger{
-  color:var(--danger);
-  animation:pulse .9s infinite;
-}
+        .value.danger {
+            color: var(--danger);
+            text-shadow: 0 0 20px rgba(255, 75, 43, 0.6);
+            animation: pulse 0.8s infinite;
+        }
 
-@keyframes pulse{
-  0%{transform:scale(1)}
-  50%{transform:scale(1.06)}
-  100%{transform:scale(1)}
-}
+        @keyframes pulse { 0% { transform: scale(1); } 50% { transform: scale(1.1); } 100% { transform: scale(1); } }
 
-small{
-  color:var(--text-sub);
-}
+        /* ===== Controls & Buttons ===== */
+        .controls { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 
-/* ===== Controls ===== */
-.controls{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:16px;
-}
+        button {
+            border: none; border-radius: 20px; padding: 18px; font-weight: 600;
+            color: #fff; cursor: pointer; transition: 0.3s;
+            backdrop-filter: blur(5px);
+        }
 
-/* ===== Buttons ===== */
-button{
-  border:none;
-  border-radius:20px;
-  padding:18px;
-  font-size:16px;
-  font-weight:600;
-  color:#fff;
-  cursor:pointer;
-  background:transparent;
-  transition:.25s ease;
-  box-shadow:0 10px 22px rgba(0,0,0,0.25);
-}
+        button.on { background: linear-gradient(135deg, rgba(16,185,129,0.8), rgba(52,211,153,0.8)); }
+        button.off { background: linear-gradient(135deg, rgba(255,65,108,0.8), rgba(255,75,43,0.8)); }
 
-button.on{
-  background:linear-gradient(135deg,#10b981,#34d399);
-}
+        button:hover { transform: translateY(-5px); filter: brightness(1.2); }
 
-button.off{
-  background:linear-gradient(135deg,#ff416c,#ff4b2b);
-}
+        .status-box {
+            margin-top: 22px; padding: 14px; border-radius: 16px;
+            background: rgba(0, 0, 0, 0.3); color: #fff;
+            font-size: 14px; text-align: center; border: 1px solid rgba(255,255,255,0.1);
+        }
 
-button:hover{
-  transform:translateY(-5px);
-  box-shadow:0 16px 32px rgba(0,0,0,0.35);
-}
-
-button:active{
-  transform:scale(.94);
-}
-
-/* ===== Status Box ===== */
-.status-box{
-  margin-top:22px;
-  padding:14px;
-  border-radius:16px;
-  background:#e5e7eb;
-  color:#334155;
-  font-size:14px;
-  text-align:center;
-}
-</style>
+        /* ตกแต่ง Lottie Animation */
+        .lottie-container {
+            display: flex; justify-content: center; margin-bottom: -15px;
+        }
+    </style>
 </head>
 
 <body>
 
+<video autoplay muted loop id="video-bg">
+  <source src="https://assets.mixkit.co/videos/preview/mixkit-abstract-technology-connection-dots-and-lines-20224-large.mp4" type="video/mp4">
+</video>
+
 <div class="container">
   <div class="header">
-    <h1><i class="fa-solid fa-wifi"></i>เครื่องวัดระยะทาง</h1>
+    <div class="lottie-container">
+        <lottie-player src="https://assets3.lottiefiles.com/packages/lf20_at6m9vtx.json" background="transparent" speed="1" style="width: 60px; height: 60px;" loop autoplay></lottie-player>
+    </div>
+    <h1>เครื่องวัดระยะทาง</h1>
     <div class="status">
-      <span class="dot"></span> ระบบเชื่อมต่อเรียบร้อย
+      <span class="dot"></span> Online - Realtime Monitoring
     </div>
   </div>
 
   <div class="card">
-    <p>ระยะทางปัจจุบัน</p>
+    <p>DISTANCE</p>
     <div id="distance" class="value">--</div>
-    <small>cm</small>
+    <small style="color: #fff;">CENTIMETERS</small>
   </div>
 
   <div class="controls">
     <button class="on" onclick="control(1)">
-      <i class="fa-solid fa-power-off"></i><br>เปิดเสียง
+      <i class="fa-solid fa-volume-high"></i><br>เปิดเสียง
     </button>
     <button class="off" onclick="control(0)">
       <i class="fa-solid fa-volume-xmark"></i><br>ปิดเสียง
@@ -192,36 +164,38 @@ button:active{
 
   <div class="status-box">
     <i class="fa-solid fa-circle-info"></i>
-    สถานะลำโพง: <b id="status-text">รอข้อมูล...</b>
+    สถานะ: <b id="status-text">รอข้อมูล...</b>
   </div>
 </div>
 
 <script>
-firebase.initializeApp({
-  apiKey: "AIzaSyD0N5IXpX-9EV921fel1JiuL8MTtCtGeA0",
-  authDomain: "projectiot-db190.firebaseapp.com",
-  databaseURL: "https://projectiot-db190-default-rtdb.firebaseio.com"
-});
+    // Config เดิมของคุณ
+    firebase.initializeApp({
+        apiKey: "AIzaSyD0N5IXpX-9EV921fel1JiuL8MTtCtGeA0",
+        authDomain: "projectiot-db190.firebaseapp.com",
+        databaseURL: "https://projectiot-db190-default-rtdb.firebaseio.com"
+    });
 
-const db = firebase.database();
+    const db = firebase.database();
 
-db.ref("/sensor/distance").on("value", s => {
-  const v = s.val();
-  const el = document.getElementById("distance");
-  el.textContent = v ?? "--";
-  el.classList.toggle("danger", v < 15);
-});
+    db.ref("/sensor/distance").on("value", s => {
+        const v = s.val();
+        const el = document.getElementById("distance");
+        el.textContent = v ?? "--";
+        // เปลี่ยนสีเป็นสีแดงถ้าเข้าใกล้เกินไป
+        el.classList.toggle("danger", v < 15);
+    });
 
-function control(v){
-  db.ref("/control/buzzer").set(v);
-}
+    function control(v){
+        db.ref("/control/buzzer").set(v);
+    }
 
-db.ref("/control/buzzer").on("value", s => {
-  const on = s.val() == 1;
-  const t = document.getElementById("status-text");
-  t.textContent = on ? "เปิดการทำงาน" : "ปิดการทำงาน";
-  t.style.color = on ? "#22c55e" : "#ff4b2b";
-});
+    db.ref("/control/buzzer").on("value", s => {
+        const on = s.val() == 1;
+        const t = document.getElementById("status-text");
+        t.textContent = on ? "กำลังทำงาน" : "ปิดการทำงาน";
+        t.style.color = on ? "#22c55e" : "#ff4b2b";
+    });
 </script>
 
 </body>
